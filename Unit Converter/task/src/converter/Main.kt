@@ -3,7 +3,8 @@ package converter
 enum class UnitType {
     DISTANCE,
     LENGTH,
-    UNKNOWN
+    TEMPERATURE,
+    UNKNOWN,
 }
 
 val lengthUnits = arrayOf(
@@ -25,6 +26,12 @@ val weightUnits = arrayOf(
     Triple(arrayOf("mg", "milligram", "milligrams"), UnitType.LENGTH, 0.001),
     Triple(arrayOf("lb", "pound", "pounds"), UnitType.LENGTH, 453.592),
     Triple(arrayOf("oz", "ounce", "ounces"), UnitType.LENGTH, 28.3495),
+)
+
+val tempUnits = arrayOf(
+    Triple(arrayOf("c", "degree Celsius", "degrees Celsius", "celsius", "dc"), UnitType.TEMPERATURE, 1.0),
+    Triple(arrayOf("f", "degree Fahrenheit", "degrees Fahrenheit", "fahrenheit", "df"), UnitType.TEMPERATURE, 1.0),
+    Triple(arrayOf("k", "kelvin", "kelvins"), UnitType.TEMPERATURE, 1.0),
 )
 
 fun main() {
