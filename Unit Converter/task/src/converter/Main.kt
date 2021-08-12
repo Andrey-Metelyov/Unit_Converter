@@ -2,7 +2,7 @@ package converter
 
 enum class UnitType {
     DISTANCE,
-    LENGTH,
+    WEIGHT,
     TEMPERATURE,
     UNKNOWN,
 }
@@ -21,11 +21,11 @@ val lengthUnits = arrayOf(
 val UNKNOWN = Triple(arrayOf("", "", ""), UnitType.UNKNOWN, 0.0)
 
 val weightUnits = arrayOf(
-    Triple(arrayOf("g", "gram", "grams"), UnitType.LENGTH, 1.0),
-    Triple(arrayOf("kg", "kilogram", "kilograms"), UnitType.LENGTH, 1000.0),
-    Triple(arrayOf("mg", "milligram", "milligrams"), UnitType.LENGTH, 0.001),
-    Triple(arrayOf("lb", "pound", "pounds"), UnitType.LENGTH, 453.592),
-    Triple(arrayOf("oz", "ounce", "ounces"), UnitType.LENGTH, 28.3495),
+    Triple(arrayOf("g", "gram", "grams"), UnitType.WEIGHT, 1.0),
+    Triple(arrayOf("kg", "kilogram", "kilograms"), UnitType.WEIGHT, 1000.0),
+    Triple(arrayOf("mg", "milligram", "milligrams"), UnitType.WEIGHT, 0.001),
+    Triple(arrayOf("lb", "pound", "pounds"), UnitType.WEIGHT, 453.592),
+    Triple(arrayOf("oz", "ounce", "ounces"), UnitType.WEIGHT, 28.3495),
 )
 
 val tempUnits = arrayOf(
@@ -37,15 +37,24 @@ val tempUnits = arrayOf(
 fun main() {
     while (true) {
         print("Enter what you want to convert (or exit): ")
-        val response = readLine()!!
+        val response = readLine()!!.lowercase()
         if (response.lowercase() == "exit") {
             break
         }
-        val (num, unitFrom, _, unitTo) = response.split(" ")
+        val words = response.split(" ")
+        System.err.println(words)
+        var counter = 0
+        val num = words[counter++]
+        val unitFrom = if (words[counter] in listOf("degree", "degrees")) words[counter++] + " " +  words[counter++] else words[counter++]
+        // skip random word
+        counter++
+        val unitTo = if (words[counter] in listOf("degree", "degrees")) words[counter++] + " " + words[counter++] else words[counter++]
+        System.err.println("$num from $unitFrom to $unitTo")
         try {
             val value = num.toDouble()
             val from = getUnitCoef(unitFrom.lowercase())
             val to = getUnitCoef(unitTo.lowercase())
+            System.err.println("converting $from -> $to")
             if (from.second == UnitType.UNKNOWN || to.second == UnitType.UNKNOWN) {
                 println("Conversion from ${if (from.second == UnitType.UNKNOWN) "???" else from.first[2]} to ${if (to.second == UnitType.UNKNOWN) "???" else to.first[2]} is impossible")
                 continue
@@ -55,9 +64,35 @@ fun main() {
                 continue
             }
 
-            val hub = from.third * value
-            System.err.println(hub)
-            val res = hub / to.third
+            var res: Double
+            if (from.second != UnitType.TEMPERATURE) {
+                if (value < 0.0) {
+                    println((if (from.second == UnitType.DISTANCE) "Length" else "Weight") + " shouldn't be negative")
+                    continue
+                }
+                val hub = from.third * value
+                System.err.println(hub)
+                res = hub / to.third
+            } else {
+                res = when (from.first[0]) {
+                    "c" -> when (to.first[0]) {
+                        "f" -> value * 9 / 5 + 32
+                        "k" -> value + 273.15
+                        else -> value
+                    }
+                    "f" -> when (to.first[0]) {
+                        "c" -> (value - 32) * 5 / 9
+                        "k" -> (value + 459.67) * 5 / 9
+                        else -> value
+                    }
+                    "k" -> when (to.first[0]) {
+                        "c" -> value - 273.15
+                        "f" -> value * 9 / 5 - 459.67
+                        else -> value
+                    }
+                    else -> value
+                }
+            }
 
             val unitName = if (value != 1.0) from.first[2] else from.first[1]
             val resUnitName = if (res != 1.0) to.first[2] else to.first[1]
@@ -70,12 +105,17 @@ fun main() {
 
 fun getUnitCoef(unit: String): Triple<Array<String>, UnitType, Double> {
     for (u in lengthUnits) {
-        if (unit in u.first) {
+        if (unit in u.first.map { it -> it.lowercase() }) {
             return u
         }
     }
     for (u in weightUnits) {
-        if (unit in u.first) {
+        if (unit in u.first.map { it -> it.lowercase() }) {
+            return u
+        }
+    }
+    for (u in tempUnits) {
+        if (unit in u.first.map { it -> it.lowercase() }) {
             return u
         }
     }
